@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1098,7 +1099,15 @@ function goTool(tool, btn) {
   btn.classList.add('active');
   btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
   if (tool === 'cotizacion') cargarCotizacion();
+  localStorage.setItem('panel_activo', tool);
 }
+
+// Restaurar panel activo al cargar
+window.addEventListener('DOMContentLoaded', () => {
+  const panel = localStorage.getItem('panel_activo') || 'aleacion';
+  const btn = document.querySelector(`.tool-chip[onclick="goTool('${panel}',this)"]`);
+  if (btn) goTool(panel, btn);
+});
 
 // ── Ley selector ──────────────────────────────────────────
 function selLey(key, ley, el) {

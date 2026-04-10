@@ -1065,7 +1065,7 @@ function rv(id, n, unit) {
 function rvBig(id, n, unit) {
   g(id).innerHTML = fmt(n) + '<span class="u"> ' + unit + '</span>';
 }
-function show(id) { g(id).classList.add('visible'); }
+function show(id) { g(id).classList.add('visible'); guardarResultados(); }
 function hide(id) { g(id).classList.remove('visible'); }
 function clr(rid, eid) { hide(rid); hide(eid); }
 
@@ -1833,7 +1833,34 @@ function guardarEstado() {
   localStorage.setItem('estado_calculadora', JSON.stringify(st));
 }
 
-// Listener global para guardar inputs al cambiar
+const RESULT_IDS = [
+  'res-alambre','res-cera','res-circulo','res-cotizacion',
+  'res-esclava','res-fleje','res-fund-oro','res-largo-anillo',
+  'res-liga','res-mediacana','res-mediaesclava','res-oro-liga',
+  'res-oro-subir','res-pulsera','res-sold-oro','res-sold-plata','res-subir'
+];
+
+function guardarResultados() {
+  const data = {};
+  RESULT_IDS.forEach(id => {
+    const el = g(id);
+    if (el) data[id] = { html: el.innerHTML, visible: el.classList.contains('visible') };
+  });
+  localStorage.setItem('resultados_calculadora', JSON.stringify(data));
+}
+
+function restaurarResultados() {
+  const saved = localStorage.getItem('resultados_calculadora');
+  if (!saved) return;
+  const data = JSON.parse(saved);
+  RESULT_IDS.forEach(id => {
+    const el = g(id);
+    if (el && data[id]) {
+      el.innerHTML = data[id].html;
+      if (data[id].visible) el.classList.add('visible');
+    }
+  });
+}
 INPUT_IDS.forEach(id => {
   const el = g(id);
   if (el) el.addEventListener('input', guardarInputs);
@@ -1842,6 +1869,7 @@ INPUT_IDS.forEach(id => {
 // Restaurar al cargar
 window.addEventListener('DOMContentLoaded', () => {
   restaurarInputs();
+  restaurarResultados();
 
   // Restaurar estado guardado
   const savedSt = localStorage.getItem('estado_calculadora');

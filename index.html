@@ -977,7 +977,7 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">USD / oz</div>
       </div>
     </div>
-    <div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:8px;font-family:'DM Mono',monospace;letter-spacing:0.05em;">1 onza troy = 31,10 gramos</div>
+    <div style="font-size:14px;color:var(--text-mid);text-align:center;margin-top:8px;font-family:'DM Mono',monospace;letter-spacing:0.05em;">1 onza troy = 31,10 gramos</div>
     <div style="font-size:13px;color:var(--text-mid);text-align:center;margin-top:8px;font-family:'DM Mono',monospace;" id="cot-timestamp">Cargando precios...</div>
   </div>
 
@@ -1657,49 +1657,73 @@ function calcSoldOro() {
 // ── COTIZACIÓN ────────────────────────────────────────────
 const OZ_TROY = 31.1035;
 const METALS_API_KEY = 'Z5PKZ6LQACWXNY2FSZB66592FSZB6';
-const CACHE_MS = 30 * 60 * 1000; // 30 minutos
 let precioPlataOz = null;
 let precioOroOz   = null;
 
+function proximoHorarioRedondo() {
+  const now = new Date();
+  const mins = now.getMinutes();
+  const segs = now.getSeconds();
+  // Próximo múltiplo de 30 minutos
+  const minutosHasta = mins < 30 ? (30 - mins) : (60 - mins);
+  return (minutosHasta * 60 - segs) * 1000;
+}
+
+function horaRedonda(ts) {
+  const d = new Date(ts);
+  const mins = d.getMinutes() >= 30 ? 30 : 0;
+  return `${d.getHours()}:${mins === 0 ? '00' : '30'}`;
+}
+
+function actualizarTimestamp(tsGuardado) {
+  const minutos = Math.floor((Date.now() - tsGuardado) / 60000);
+  const hora = horaRedonda(tsGuardado);
+  const disclaimer = minutos < 1 ? 'justo ahora' : `hace ${minutos} min`;
+  g('cot-timestamp').textContent = `Precio al ${hora} hs · actualizado ${disclaimer}`;
+}
+
 async function cargarCotizacion() {
-  // Intentar cargar desde localStorage
   const cached = localStorage.getItem('cotizacion_cache');
   if (cached) {
-    const { plata, oro, timestamp, hora } = JSON.parse(cached);
+    const { plata, oro, timestamp } = JSON.parse(cached);
     const ahora = Date.now();
-    if ((ahora - timestamp) < CACHE_MS) {
+    const minutosTranscurridos = (ahora - timestamp) / 60000;
+    if (minutosTranscurridos < 30) {
       precioPlataOz = plata;
       precioOroOz   = oro;
       g('cot-plata-oz').textContent = '$' + plata.toFixed(2);
       g('cot-oro-oz').textContent   = '$' + oro.toFixed(2);
-      g('cot-timestamp').textContent = `Precio al ${hora} hs`;
+      actualizarTimestamp(timestamp);
+      // Actualizar el disclaimer cada minuto
+      setInterval(() => actualizarTimestamp(timestamp), 60000);
+      // Programar refresh en el próximo horario redondo
+      setTimeout(() => {
+        localStorage.removeItem('cotizacion_cache');
+        cargarCotizacion();
+      }, proximoHorarioRedondo());
       return;
     }
   }
-  // Si no hay caché válido, pedir a la API
   g('cot-timestamp').textContent = 'Actualizando...';
   try {
     const res = await fetch(`https://api.metals.dev/v1/latest?api_key=${METALS_API_KEY}&currency=USD&unit=toz`);
     const data = await res.json();
     precioPlataOz = data.metals?.silver;
     precioOroOz   = data.metals?.gold;
-    const now = new Date();
-    const hora = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const timestamp = Date.now();
     g('cot-plata-oz').textContent = precioPlataOz ? '$' + precioPlataOz.toFixed(2) : '—';
     g('cot-oro-oz').textContent   = precioOroOz   ? '$' + precioOroOz.toFixed(2)   : '—';
-    g('cot-timestamp').textContent = `Precio al ${hora} hs`;
-    // Guardar en localStorage
+    actualizarTimestamp(timestamp);
+    setInterval(() => actualizarTimestamp(timestamp), 60000);
     localStorage.setItem('cotizacion_cache', JSON.stringify({
       plata: precioPlataOz,
       oro:   precioOroOz,
-      timestamp: Date.now(),
-      hora
+      timestamp
     }));
-    // Programar próxima actualización
     setTimeout(() => {
       localStorage.removeItem('cotizacion_cache');
       cargarCotizacion();
-    }, CACHE_MS);
+    }, proximoHorarioRedondo());
   } catch(e) {
     g('cot-timestamp').textContent = 'Error al cargar. Intentá de nuevo.';
   }

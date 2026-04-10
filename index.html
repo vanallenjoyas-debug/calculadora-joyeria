@@ -1099,7 +1099,8 @@ function goTool(tool, btn) {
   btn.classList.add('active');
   btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
   if (tool === 'cotizacion') cargarCotizacion();
-  localStorage.setItem('panel_activo', tool);
+  st.panelActivo = tool;
+  guardarEstado();
 }
 
 // Restaurar panel activo al cargar
@@ -1796,6 +1797,76 @@ function lpSetPieza(pieza) {
     g('lp-'+p).style.display = p===pieza ? 'block' : 'none';
   });
 }
+
+// ── PERSISTENCIA DE INPUTS Y RESULTADOS ──────────────────
+const INPUT_IDS = [
+  'al-d','al-l','an-circ','an-diam','an-esp','an-nro',
+  'ce-peso','cot-gramos','di-d','di-e','esc-circ','esc-esp',
+  'fl-a','fl-e','fl-l','liga-peso','mc-a','mc-e','mc-l',
+  'mesc-circ','mesc-esp','oal-d','oal-l','odi-d','odi-e',
+  'ofl-a','ofl-e','ofl-l','omc-a','omc-e','omc-l',
+  'oro-liga-peso','oro-subir-peso','pul-circ',
+  'sold-oro-peso','sold-plata-peso','subir-peso'
+];
+
+function guardarInputs() {
+  const data = {};
+  INPUT_IDS.forEach(id => {
+    const el = g(id);
+    if (el) data[id] = el.value;
+  });
+  localStorage.setItem('inputs_calculadora', JSON.stringify(data));
+}
+
+function restaurarInputs() {
+  const saved = localStorage.getItem('inputs_calculadora');
+  if (!saved) return;
+  const data = JSON.parse(saved);
+  INPUT_IDS.forEach(id => {
+    const el = g(id);
+    if (el && data[id] !== undefined) el.value = data[id];
+  });
+}
+
+// Guardar estado de selecciones (pills, switches, etc.)
+function guardarEstado() {
+  localStorage.setItem('estado_calculadora', JSON.stringify(st));
+}
+
+// Listener global para guardar inputs al cambiar
+INPUT_IDS.forEach(id => {
+  const el = g(id);
+  if (el) el.addEventListener('input', guardarInputs);
+});
+
+// Restaurar al cargar
+window.addEventListener('DOMContentLoaded', () => {
+  restaurarInputs();
+
+  // Restaurar estado guardado
+  const savedSt = localStorage.getItem('estado_calculadora');
+  if (savedSt) {
+    try { Object.assign(st, JSON.parse(savedSt)); } catch(e) {}
+  }
+
+  // Restaurar panel activo
+  const panel = st.panelActivo || 'aleacion';
+  const btn = document.querySelector(`.tool-chip[onclick="goTool('${panel}',this)"]`);
+  if (btn) goTool(panel, btn);
+
+  // Restaurar selecciones visuales
+  aleSetMetal(st.aleMetal || 'plata');
+  aleSetMode(st.aleMode || 'liga');
+  fundSetMetal(st.fundMetal || 'plata');
+  ceSetMetal(st.ceMetal || 'plata');
+  lpSetPieza(st.lpPieza || 'anillo');
+  anSetModo(st.anModo || 'nro');
+  anSetSistema(st.anSistema || 'europeo');
+  soldSetMetal(st.soldMetal || 'plata');
+  soldSetDureza(st.soldDureza || 'dura');
+  soldSetOroColor(st.soldOroColor || 'amarillo');
+  cotSetMetal(st.cotMetal || 'plata');
+});
 </script>
 </body>
 </html>

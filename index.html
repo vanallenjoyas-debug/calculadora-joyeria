@@ -1828,8 +1828,18 @@ if ('serviceWorker' in navigator) {
 let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
+  const instalado = localStorage.getItem('pwa_instalado');
+  if (instalado) return;
+  const cierres = parseInt(localStorage.getItem('pwa_cierres') || '0');
+  const ultimoCierre = parseInt(localStorage.getItem('pwa_cerrado') || '0');
+  const ahora = Date.now();
+  const dia = 24 * 60 * 60 * 1000;
+  let espera = 0;
+  if (cierres === 1) espera = 1 * dia;
+  else if (cierres === 2) espera = 5 * dia;
+  else if (cierres >= 3) espera = 7 * dia;
+  if (ultimoCierre && (ahora - ultimoCierre) < espera) return;
   deferredPrompt = e;
-  // Mostrar popup después de 3 segundos
   setTimeout(() => {
     if (deferredPrompt) g('pwa-banner').style.display = 'flex';
   }, 3000);
@@ -1838,13 +1848,17 @@ window.addEventListener('beforeinstallprompt', e => {
 function instalarApp() {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(() => {
+  deferredPrompt.userChoice.then(choice => {
+    if (choice.outcome === 'accepted') localStorage.setItem('pwa_instalado', '1');
     deferredPrompt = null;
     g('pwa-banner').style.display = 'none';
   });
 }
 
 function cerrarBanner() {
+  const cierres = parseInt(localStorage.getItem('pwa_cierres') || '0');
+  localStorage.setItem('pwa_cierres', cierres + 1);
+  localStorage.setItem('pwa_cerrado', Date.now().toString());
   g('pwa-banner').style.display = 'none';
 }
 const INPUT_IDS = [

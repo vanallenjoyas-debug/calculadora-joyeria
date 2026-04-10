@@ -958,7 +958,7 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
 <div class="panel" id="panel-cotizacion">
   <div class="sec-eyebrow">Precio internacional</div>
   <div class="sec-title">Cotización</div>
-  <div class="sec-desc">Precio spot en tiempo real. Valor internacional en dólares.</div>
+  <div class="sec-desc">Precio spot. Valor internacional en dólares.</div>
 
   <!-- Precios spot -->
   <div class="card" style="margin-bottom:10px;">
@@ -977,7 +977,7 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">USD / oz</div>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:12px;" id="cot-timestamp">Tocá actualizar para cargar los precios</div>
+    <div style="font-size:13px;color:var(--text-mid);text-align:center;margin-top:12px;font-family:'DM Mono',monospace;" id="cot-timestamp">Cargando precios...</div>
   </div>
 
   <!-- Calculadora de valor -->
@@ -1651,25 +1651,46 @@ const METALS_API_KEY = 'Z5PKZ6LQACWXNY2FSZB66592FSZB6';
 const CACHE_MS = 30 * 60 * 1000; // 30 minutos
 let precioPlataOz = null;
 let precioOroOz   = null;
-let ultimaActualizacion = null;
 
-async function cargarCotizacion(forzar = false) {
-  const ahora = Date.now();
-  if (!forzar && ultimaActualizacion && (ahora - ultimaActualizacion) < CACHE_MS) return;
+async function cargarCotizacion() {
+  // Intentar cargar desde localStorage
+  const cached = localStorage.getItem('cotizacion_cache');
+  if (cached) {
+    const { plata, oro, timestamp, hora } = JSON.parse(cached);
+    const ahora = Date.now();
+    if ((ahora - timestamp) < CACHE_MS) {
+      precioPlataOz = plata;
+      precioOroOz   = oro;
+      g('cot-plata-oz').textContent = '$' + plata.toFixed(2);
+      g('cot-oro-oz').textContent   = '$' + oro.toFixed(2);
+      g('cot-timestamp').textContent = `Precio al ${hora} hs`;
+      return;
+    }
+  }
+  // Si no hay caché válido, pedir a la API
   g('cot-timestamp').textContent = 'Actualizando...';
   try {
     const res = await fetch(`https://api.metals.dev/v1/latest?api_key=${METALS_API_KEY}&currency=USD&unit=toz`);
     const data = await res.json();
     precioPlataOz = data.metals?.silver;
     precioOroOz   = data.metals?.gold;
-    ultimaActualizacion = Date.now();
     const now = new Date();
     const hora = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
     g('cot-plata-oz').textContent = precioPlataOz ? '$' + precioPlataOz.toFixed(2) : '—';
     g('cot-oro-oz').textContent   = precioOroOz   ? '$' + precioOroOz.toFixed(2)   : '—';
     g('cot-timestamp').textContent = `Precio al ${hora} hs`;
+    // Guardar en localStorage
+    localStorage.setItem('cotizacion_cache', JSON.stringify({
+      plata: precioPlataOz,
+      oro:   precioOroOz,
+      timestamp: Date.now(),
+      hora
+    }));
     // Programar próxima actualización
-    setTimeout(() => cargarCotizacion(true), CACHE_MS);
+    setTimeout(() => {
+      localStorage.removeItem('cotizacion_cache');
+      cargarCotizacion();
+    }, CACHE_MS);
   } catch(e) {
     g('cot-timestamp').textContent = 'Error al cargar. Intentá de nuevo.';
   }

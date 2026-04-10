@@ -1130,11 +1130,7 @@ function goTool(tool, btn) {
 }
 
 // Restaurar panel activo al cargar
-window.addEventListener('DOMContentLoaded', () => {
-  const panel = localStorage.getItem('panel_activo') || 'aleacion';
-  const btn = document.querySelector(`.tool-chip[onclick="goTool('${panel}',this)"]`);
-  if (btn) goTool(panel, btn);
-});
+// Panel activo se restaura en el DOMContentLoaded principal
 
 // ── Ley selector ──────────────────────────────────────────
 function selLey(key, ley, el) {

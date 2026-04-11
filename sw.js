@@ -1,4 +1,4 @@
-const CACHE = 'joyeria-v2';
+const CACHE = 'joyeria-v3';
 const ASSETS = ['./', './index.html'];
 
 self.addEventListener('install', e => {

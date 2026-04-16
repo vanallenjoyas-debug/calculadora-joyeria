@@ -1,4 +1,5 @@
 {
+  "id": "ar.com.calculadorajoyeria",
   "name": "Calculadora para Joyeros",
   "short_name": "Calculadora",
   "description": "Calculadora profesional para joyeros por Javier Romero",
@@ -7,6 +8,8 @@
   "background_color": "#111213",
   "theme_color": "#111213",
   "orientation": "portrait",
+  "categories": ["utilities", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icon-16.png",
@@ -34,6 +37,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Calculadora para Joyeros - Vista escritorio"
+    },
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Calculadora para Joyeros - Vista mobile"
     }
   ]
 }

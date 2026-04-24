@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "ar.com.calculadorajoyeria.twa",
+    "sha256_cert_fingerprints": ["F1:A8:70:E5:5D:BE:D9:16:E8:FE:E0:53:28:0D:0E:27:4A:CA:5C:A0:38:67:FE:AB:12:D5:80:8F:B9:FF:23:94"]
+  }
+}]
